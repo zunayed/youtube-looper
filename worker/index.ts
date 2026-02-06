@@ -13,7 +13,18 @@ export default {
       return assetResponse
     }
 
+    if (request.method !== "GET") {
+      return assetResponse
+    }
+
     const url = new URL(request.url)
+    const acceptsHtml = request.headers.get("accept")?.includes("text/html") ?? false
+    const hasFileExtension = /\.[a-zA-Z0-9]+$/.test(url.pathname)
+
+    if (!acceptsHtml || hasFileExtension) {
+      return assetResponse
+    }
+
     const indexRequest = new Request(`${url.origin}/index.html`, request)
 
     return env.ASSETS.fetch(indexRequest)

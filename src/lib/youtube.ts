@@ -44,6 +44,16 @@ declare global {
 }
 
 let apiPromise: Promise<YouTubeGlobal> | null = null
+const YOUTUBE_ID_PATTERN = /^[a-zA-Z0-9_-]{11}$/
+
+function normalizeYouTubeId(value: string | null | undefined) {
+  if (!value) {
+    return null
+  }
+
+  const trimmed = value.trim()
+  return YOUTUBE_ID_PATTERN.test(trimmed) ? trimmed : null
+}
 
 export function loadYouTubeIframeApi() {
   if (apiPromise) {
@@ -82,9 +92,9 @@ export function extractYouTubeId(input: string) {
     return null
   }
 
-  const basicId = /^[a-zA-Z0-9_-]{11}$/
-  if (basicId.test(trimmed)) {
-    return trimmed
+  const directId = normalizeYouTubeId(trimmed)
+  if (directId) {
+    return directId
   }
 
   try {
@@ -92,11 +102,11 @@ export function extractYouTubeId(input: string) {
     const host = url.hostname.replace(/^www\./, "")
 
     if (host === "youtu.be") {
-      return url.pathname.split("/").filter(Boolean)[0] ?? null
+      return normalizeYouTubeId(url.pathname.split("/").filter(Boolean)[0])
     }
 
     if (host === "youtube.com" || host === "m.youtube.com") {
-      const idFromQuery = url.searchParams.get("v")
+      const idFromQuery = normalizeYouTubeId(url.searchParams.get("v"))
       if (idFromQuery) {
         return idFromQuery
       }
@@ -104,7 +114,7 @@ export function extractYouTubeId(input: string) {
       const segments = url.pathname.split("/").filter(Boolean)
       const embedIndex = segments.indexOf("embed")
       if (embedIndex !== -1) {
-        return segments[embedIndex + 1] ?? null
+        return normalizeYouTubeId(segments[embedIndex + 1])
       }
     }
 
@@ -112,7 +122,7 @@ export function extractYouTubeId(input: string) {
       const segments = url.pathname.split("/").filter(Boolean)
       const embedIndex = segments.indexOf("embed")
       if (embedIndex !== -1) {
-        return segments[embedIndex + 1] ?? null
+        return normalizeYouTubeId(segments[embedIndex + 1])
       }
     }
   } catch {
